@@ -21,11 +21,10 @@
   <body>
 
   <?php
+  session_start();
 	include 'credentials.php'; //credentials for the db connection
 
-	ini_set('display_errors', 1);
-	ini_set('display_startup_errors', 1);
-	error_reporting(E_ALL);
+	error_reporting(E_ALL & ~E_NOTICE);
 
 	try {
 	    $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
@@ -56,24 +55,7 @@
     </nav>
 
     <div class="container-fluid">
-      <table class="table table-hover">
-        <tr>
-          <th>Titel</th>
-          <th>Beschreibung</th>
-          <th>Erstelldatum</th>
-          <th>Besitzer</th>
-          <th>Empf&auml;nger</th>
-        </tr>
-        <? foreach ($result as $row) : ?>
-	    <tr>
-	      <td><? echo $row[0]; ?></td>
-	      <td><? echo $row[1]; ?></td>
-	      <td><? echo $row[2]; ?></td>
-	      <td><? echo $row[3]; ?></td>
-	      <td><? echo $row[4]; ?></td>
-	    </tr>
-	    <? endforeach; ?>
-	   </table>
+
     </div>
 
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
