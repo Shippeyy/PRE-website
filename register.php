@@ -48,39 +48,48 @@ catch(PDOException $e)
 	echo "Database connection failed: " . $e->getMessage();
 	}
 
-$showFormular = true; //Variable ob das Registrierungsformular anezeigt werden soll
- 
+
+
 if(isset($_GET['register'])) {
-	$error = false;
-	$vorname = $_POST['vorname'];
-	$nachname = $_POST['nachname'];
-	$passwort = $_POST['passwort'];
+ $error = false;
+ $vorname = $_POST['vorname'];
+ $nachname = $_POST['nachname'];
+ $passwort = $_POST['passwort'];
+  
+ if(strlen($passwort) == 0) {
+ echo 'Bitte ein Passwort angeben<br>';
+ $error = true;
+ }
  
-if(strlen($passwort) == 0) {
-	echo 'Bitte ein Passwort angeben<br>';
-	$error = true;
-}
+ //Keine Fehler, wir können den Nutzer registrieren
+ if(!$error) { 
+ $passwort_hash = password_hash($passwort, PASSWORD_DEFAULT);
+ 
+ $sth = $conn->prepare('INSERT INTO personen (vorname, nachname, passwort, zugriffsLevel) VALUES (:vorname, :nachname, :passwort, :zugriffsLevel)');
+ $sth->bindParam(':vorname', $vorname);
+ $sth->bindParam(':nachname', $nachname);
+ $sth->bindParam(':passwort', password_hash($passwort, PASSWORD_DEFAULT));
+ $sth->bindParam(':zugriffsLevel', $zugriffsLevel = 1);
+ $sth->execute();
 
-if(!$error){
-	$sth = $conn->prepare('INSERT INTO personen (vorname, nachname, passwort) VALUES (:vorname, :nachname, :passwort)');
-	$sth->bindParam(':vorname', $vorname);
-	$sth->bindParam(':nachname', $nachname);
-	$sth->bindParam(':passwort', $passwort);
-	$sth->execute();
-	$result = $sth->fetchAll();
+ $findCreatedUser = $conn->prepare('SELECT vorname FROM personen WHERE vorname = :vorname AND nachname = :nachname');
+ $findCreatedUser->bindParam(':vorname', $vorname);
+ $findCreatedUser->bindParam(':nachname', $nachname);
+ $findCreatedUser->execute();
+ $result = $findCreatedUser->fetchAll();
 
-	if($result){
-		echo 'Die Registrierung wurder erfolgreich durchgeführt! <a href="login.php">Zum Login</a>';
-		$showFormular = false;
-	}
-	else {
-		echo 'Ein Fehler ist aufgetreten, bitte wenden Sie sich an einen Administrator<br>';
-	}
+ 
+ if($result) { 
+ echo 'Du wurdest erfolgreich registriert. <a href="login.php">Zum Login</a>';
+ } else {
+ echo 'Beim Abspeichern ist leider ein Fehler aufgetreten<br>';
+ }
+ } 
 }
 ?>
 
     <div class="container-fluid">
-      <form action="?register=1">
+      <form action="?register=1" method="post">
 
       	<div class="input-group">
 		  <span class="input-group-addon" id="basic-addon1">Eingabe</span>
