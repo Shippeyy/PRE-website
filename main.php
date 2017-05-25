@@ -52,32 +52,198 @@
 	    echo "Database connection failed: " . $e->getMessage();
 	    }
 
-	$sth = $conn->prepare('SELECT titel, beschreibung, erstellDatum, p_besitzer, p_empfaenger FROM anforderungen WHERE p_besitzer = :user');
+	$sth = $conn->prepare('SELECT id, titel, beschreibung, erstellDatum, p_besitzer, p_empfaenger FROM anforderungen
+						   WHERE p_besitzer = :user OR p_empfaenger = :user');
 	$sth->bindParam(':user', $_SESSION['userid']);
 	$sth->execute();
-	$result = $sth->fetchAll();
+	$anforderungen = $sth->fetchAll();
+
+	$stmt = $conn->prepare('SELECT * FROM personen');
+	$stmt->execute();
+	$personen = $stmt->fetchAll();
 
 	?>
 
     <div class="container-fluid">
-      <table class="table table-hover">
-        <tr>
-          <th>Titel</th>
-          <th>Beschreibung</th>
-          <th>Erstelldatum</th>
-          <th>Besitzer</th>
-          <th>Empf&auml;nger</th>
-        </tr>
-        <? foreach ($result as $row) : ?>
-	    <tr>
-	      <td><? echo $row[0]; ?></td>
-	      <td><? echo $row[1]; ?></td>
-	      <td><? echo $row[2]; ?></td>
-	      <td><? echo $row[3]; ?></td>
-	      <td><? echo $row[4]; ?></td>
-	    </tr>
-	    <? endforeach; ?>
-	   </table>
+    	<!-- Button trigger modal -->
+		<button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modelAddAnforderung">Anforderung hinzufügen</button>
+		<button type="button" class="btn btn-primary btn-danger" data-toggle="modal" data-target="#modelDeleteAnforderung">Anforderung entfernen</button>
+		<br>
+		<br>
+
+		<!-- Modal -->
+		<div class="modal fade" id="modelAddAnforderung" tabindex="-1" role="dialog" aria-labelledby="modelAddAnforderungLabel">
+		  <div class="modal-dialog" role="document">
+		    <div class="modal-content">
+		      <div class="modal-header">
+		        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+		        <h4 class="modal-title" id="modelAddAnforderungLabel">Anforderung hinzufügen</h4>
+		      </div>
+		      <div class="modal-body">
+		      	<form action="?addAnforderung=1" method="post">
+			    	<div class="input-group">
+			    		<span class="input-group-addon" id="basic-addon1">Eingabe</span>
+			    		<input type="text" class="form-control" placeholder="Titel" aria-describedby="basic-addon1" name="titel">
+			    	</div>
+			    <br>
+				    <div class="input-group">
+				    	<span class="input-group-addon" id="basic-addon1">Eingabe</span>
+				    	<input type="text" class="form-control" placeholder="Beschreibung" aria-describedby="basic-addon1" name="beschreibung">
+				    </div>
+			    <br>
+				    <div class="input-group">
+				    	<span class="input-group-addon" id="basic-addon1">Eingabe</span>
+				    	<input type="date" class="form-control" placeholder="Erstelldatum" aria-describedby="basic-addon1" name="erstelldatum">
+				    </div>
+			    <br>
+			    	<span class="input-group-addon" id="basic-addon1">Besitzer</span>
+			    	<select name="besitzer" id="besitzer" aria-describedby="basic-addon1" class="form-control">
+					  <option selected="selected">Choose one</option>
+					  <?php
+					    foreach($personen as $person) { ?>
+					      <option value="<?=$person['id'] ?>"><?= $person['vorname'] . " " . $person['nachname'] ?></option>
+					  <?php
+					    } ?>
+					</select>
+				<br>
+					<span class="input-group-addon" id="basic-addon1">Empf&auml;nger</span>
+			    	<select name="empfaenger" id="empfaenger" aria-describedby="basic-addon1" class="form-control">
+					  <option selected="selected">Choose one</option>
+					  <?php
+					    foreach($personen as $person) { ?>
+					      <option value="<?=$person['id'] ?>"><?= $person['vorname'] . " " . $person['nachname'] ?></option>
+					  <?php
+					    } ?>
+					</select>
+				<br>
+			    	<input type="submit" class="btn btn-default" value="Anforderung hinzufügen" />
+			    </form>
+		      </div>
+		      <div class="modal-footer">
+		        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+		      </div>
+		    </div>
+		  </div>
+		</div>
+
+		<div class="modal fade" id="modelDeleteAnforderung" tabindex="-1" role="dialog" aria-labelledby="modelDeleteAnforderungLabel">
+		  <div class="modal-dialog" role="document">
+		    <div class="modal-content">
+		      <div class="modal-header">
+		        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+		        <h4 class="modal-title" id="modelDeleteAnforderungLabel">Anforderung entfernen</h4>
+		      </div>
+		      <div class="modal-body">
+		      	<form action="?deleteAnforderung=1" method="post">
+			    	<span class="input-group-addon" id="basic-addon1">Anforderung</span>
+			    	<select name="targetAnforderung" id="targetAnforderung" aria-describedby="basic-addon1" class="form-control">
+					  <option selected="selected">Choose one</option>
+					  <?php
+					    foreach($anforderungen as $anforderung) { ?>
+					      <option value="<?=$anforderung['id'] ?>"><?= $anforderung['titel'] ?></option>
+					  <?php
+					    } ?>
+					</select>
+				<br>
+			    	<input type="submit" class="btn btn-default" value="Anforderung entfernen" />
+			    </form>
+		      </div>
+		      <div class="modal-footer">
+		        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+		      </div>
+		    </div>
+		  </div>
+		</div>
+
+<?php 
+//add below
+if(isset($_GET['addAnforderung'])) {
+ $error = false;
+ $titel = $_POST['titel'];
+ $beschreibung = $_POST['beschreibung'];
+ $erstelldatum = $_POST['erstelldatum'];
+ $besitzer = $_POST['besitzer'];
+ $empfaenger = $_POST['empfaenger'];
+  
+ if(strlen($titel) == 0 || strlen($beschreibung) == 0 || strlen($erstelldatum) == 0 || strlen($besitzer) == 0 || strlen($empfaenger) == 0) {
+ echo 'Bitte alle Felder ausfüllen<br>';
+ $error = true;
+ }
+ 
+ //Keine Fehler, wir können den Nutzer registrieren
+ if(!$error) { 
+ 
+ $createAnforderung = $conn->prepare('INSERT INTO anforderungen (titel, beschreibung, erstellDatum, p_besitzer, p_empfaenger)
+ 						VALUES (:titel, :beschreibung, :erstellDatum, :p_besitzer, :p_empfaenger)');
+ $createAnforderung->bindParam(':titel', $titel);
+ $createAnforderung->bindParam(':beschreibung', $beschreibung);
+ $createAnforderung->bindParam(':erstellDatum', $erstelldatum);
+ $createAnforderung->bindParam(':p_besitzer', $besitzer);
+ $createAnforderung->bindParam(':p_empfaenger', $empfaenger);
+ $createAnforderung->execute();
+
+ $findCreatedAnforderung = $conn->prepare('SELECT titel FROM anforderungen
+ 										   WHERE titel = :titel
+ 										    AND beschreibung = :beschreibung
+ 										   	AND erstellDatum = :erstellDatum
+ 										   	AND p_besitzer = :p_besitzer
+ 										   	AND p_empfaenger = :p_empfaenger');
+ $findCreatedAnforderung->bindParam(':titel', $titel);
+ $findCreatedAnforderung->bindParam(':beschreibung', $beschreibung);
+ $findCreatedAnforderung->bindParam(':erstellDatum', $erstelldatum);
+ $findCreatedAnforderung->bindParam(':p_besitzer', $besitzer);
+ $findCreatedAnforderung->bindParam(':p_empfaenger', $empfaenger);
+ $findCreatedAnforderung->execute();
+ $createdAnforderung = $findCreatedAnforderung->fetchAll();
+
+ 
+ if($createdAnforderung) { 
+ echo 'Die Anforderung wurde erfolgreich hinzugefügt<br>';
+ } else {
+ echo 'Beim Abspeichern ist leider ein Fehler aufgetreten<br>';
+ }
+ } 
+}
+
+//delete below
+if(isset($_GET['deleteAnforderung'])) {
+ $error = false;
+ $targetAnforderung = $_POST['targetAnforderung'];
+  
+ if(strlen($targetAnforderung) == 0) {
+ echo 'Bitte alle Felder ausfüllen<br>';
+ $error = true;
+ }
+ 
+ //Keine Fehler, wir können den Nutzer registrieren
+ if(!$error) { 
+
+ $deleteAnforderung = $conn->prepare('DELETE FROM anforderungen WHERE id = :targetAnforderung');
+ $deleteAnforderung->bindParam(':targetAnforderung', $targetAnforderung);
+ $deleteAnforderung->execute();
+ 
+ } 
+}
+?>
+		<!-- table -->
+      	<table class="table table-hover">
+	        <tr>
+	          <th>Titel</th>
+	          <th>Beschreibung</th>
+	          <th>Erstelldatum</th>
+	          <th>Besitzer</th>
+	          <th>Empf&auml;nger</th>
+	        </tr>
+	        <? foreach ($anforderungen as $anforderung) : ?>
+		    <tr>
+		      <td><? echo $anforderung[1]; ?></td>
+		      <td><? echo $anforderung[2]; ?></td>
+		      <td><? echo $anforderung[3]; ?></td>
+		      <td><? echo $anforderung[4]; ?></td>
+		      <td><? echo $anforderung[5]; ?></td>
+		    </tr>
+		    <? endforeach; ?>
+	   	</table>
     </div>
 
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
