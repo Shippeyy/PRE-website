@@ -20,31 +20,7 @@
   </head>
   <body>
 
-  <?php
-  session_start();
-	include 'credentials.php'; //credentials for the db connection
-
-	error_reporting(E_ALL & ~E_NOTICE);
-
-	try {
-	    $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
-	    // set the PDO error mode to exception
-	    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-	    }
-	catch(PDOException $e)
-	    {
-	    echo "Database connection failed: " . $e->getMessage();
-	    }
-
-	$sth = $conn->prepare('SELECT titel, beschreibung, erstellDatum, p_besitzer, p_empfaenger FROM anforderungen
-	WHERE p_besitzer = :user');
-	$sth->bindParam(':user', $user = 1);
-	$sth->execute();
-	$result = $sth->fetchAll();
-
-	?>
-	    
-    <nav class="navbar navbar-default">
+  <nav class="navbar navbar-default">
       <div class="container-fluid">
         <p class="navbar-text">SimpleFeatures</p>
         <a type="button" class="btn btn-default navbar-btn" href="main.php">Dashboard</a>
@@ -54,8 +30,76 @@
       </div>
     </nav>
 
-    <div class="container-fluid">
+<?php
+ session_start();
+ if(isset($_SESSION['userid'])) {
+  die('<br> Bitte zuerst <a href="logout.php">ausloggen</a>');
+  }
+include 'credentials.php'; //credentials for the db connection
 
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+try {
+  $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
+  // set the PDO error mode to exception
+  $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+  }
+catch(PDOException $e)
+  {
+  echo "Database connection failed: " . $e->getMessage();
+  }
+
+if(isset($_GET['login'])) {
+ $vorname = $_POST['vorname'];
+ $nachname = $_POST['nachname'];
+ $passwort = $_POST['passwort'];
+  
+ if(strlen($passwort) == 0) {
+ echo 'Bitte ein Passwort angeben<br>';
+ }
+ 
+ 
+$sth = $conn->prepare('SELECT id, vorname, nachname, passwort, zugriffsLevel FROM personen WHERE vorname = :vorname AND nachname = :nachname');
+$sth->bindParam(':vorname', $vorname);
+$sth->bindParam(':nachname', $nachname);
+$sth->execute();
+$result = $sth->fetch();
+
+ 
+//Überprüfung des Passworts
+if ($result !== false && password_verify($passwort, $result['passwort'])) {
+ $_SESSION['userid'] = $result['id'];
+ die('Login erfolgreich. Weiter zum <a href="main.php">Dashboard</a>');
+}
+else {
+ echo "Die eingegebenen Login Daten waren falsch<br>";
+}
+}
+?>
+
+    <div class="container-fluid">
+      <form action="?login=1" method="post">
+
+        <div class="input-group">
+      <span class="input-group-addon" id="basic-addon1">Eingabe</span>
+      <input type="text" class="form-control" placeholder="Vorname" aria-describedby="basic-addon1" name="vorname">
+    </div>
+    <br>
+    <div class="input-group">
+      <span class="input-group-addon" id="basic-addon1">Eingabe</span>
+      <input type="text" class="form-control" placeholder="Nachname" aria-describedby="basic-addon1" name="nachname">
+    </div>
+    <br>
+    <div class="input-group">
+      <span class="input-group-addon" id="basic-addon1">Eingabe</span>
+      <input type="password" class="form-control" placeholder="Passwort" aria-describedby="basic-addon1" name="passwort">
+    </div>
+    <br>
+    <input type="submit" class="btn btn-default" value="Login" />
+
+      </form>
     </div>
 
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->

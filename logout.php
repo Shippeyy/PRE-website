@@ -30,55 +30,12 @@
       </div>
     </nav>
 
-    <?php
-	session_start();
-	if(!isset($_SESSION['userid'])) {
-	 die('<br> Bitte zuerst <a href="login.php">einloggen</a>');
-	}
-
-	include 'credentials.php'; //credentials for the db connection
-
-	ini_set('display_errors', 1);
-	ini_set('display_startup_errors', 1);
-	error_reporting(E_ALL);
-
-	try {
-	    $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
-	    // set the PDO error mode to exception
-	    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-	    }
-	catch(PDOException $e)
-	    {
-	    echo "Database connection failed: " . $e->getMessage();
-	    }
-
-	$sth = $conn->prepare('SELECT titel, beschreibung, erstellDatum, p_besitzer, p_empfaenger FROM anforderungen WHERE p_besitzer = :user');
-	$sth->bindParam(':user', $_SESSION['userid']);
-	$sth->execute();
-	$result = $sth->fetchAll();
-
-	?>
-
-    <div class="container-fluid">
-      <table class="table table-hover">
-        <tr>
-          <th>Titel</th>
-          <th>Beschreibung</th>
-          <th>Erstelldatum</th>
-          <th>Besitzer</th>
-          <th>Empf&auml;nger</th>
-        </tr>
-        <? foreach ($result as $row) : ?>
-	    <tr>
-	      <td><? echo $row[0]; ?></td>
-	      <td><? echo $row[1]; ?></td>
-	      <td><? echo $row[2]; ?></td>
-	      <td><? echo $row[3]; ?></td>
-	      <td><? echo $row[4]; ?></td>
-	    </tr>
-	    <? endforeach; ?>
-	   </table>
-    </div>
+<?php
+session_start();
+session_destroy();
+ 
+echo "Logout erfolgreich";
+?>
 
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
